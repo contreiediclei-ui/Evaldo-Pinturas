@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1e3a5f">
+<title>OficinaApp - Funilaria e Pintura</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --azul:#1e3a5f; --azul-claro:#2c5282; --azul-hover:#162c47;
+  --cinza-bg:#f5f7fa; --cinza:#e2e8f0; --cinza-text:#4a5568;
+  --branco:#fff; --verde:#38a169; --vermelho:#e53e3e; --amarelo:#d69e2e;
+  --sombra:0 2px 8px rgba(0,0,0,0.08);
+}
+html, body { height:100%; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--cinza-bg); color:#1a202c; font-size:15px; }
+#app { max-width:600px; margin:0 auto; min-height:100vh; background:var(--branco); display:flex; flex-direction:column; position:relative; }
+
+/* HEADER */
+.header { background:var(--azul); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; box-shadow:var(--sombra); }
+.header h1 { font-size:17px; font-weight:600; flex:1; }
+.header .logo-mini { width:32px; height:32px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.btn-back { background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer; padding:4px 8px; }
+.btn-icon { background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer; padding:6px; }
+
+/* TELAS */
+.screen { flex:1; padding:16px; padding-bottom:90px; display:none; animation:fadeIn 0.2s; }
+.screen.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* BOTÕES */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 20px; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.15s; min-height:48px; }
+.btn-primary { background:var(--azul); color:#fff; width:100%; }
+.btn-primary:hover, .btn-primary:active { background:var(--azul-hover); }
+.btn-secondary { background:var(--cinza); color:#1a202c; }
+.btn-success { background:var(--verde); color:#fff; }
+.btn-danger { background:var(--vermelho); color:#fff; }
+.btn-outline { background:transparent; border:2px solid var(--azul); color:var(--azul); }
+.btn-sm { padding:8px 14px; font-size:13px; min-height:36px; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* FORMS */
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:13px; font-weight:600; color:var(--cinza-text); margin-bottom:6px; }
+.form-control { width:100%; padding:12px 14px; border:1.5px solid var(--cinza); border-radius:10px; font-size:15px; background:#fff; transition:border 0.15s; }
+.form-control:focus { outline:none; border-color:var(--azul); }
+textarea.form-control { resize:vertical; min-height:70px; font-family:inherit; }
+select.form-control { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a5568' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+
+/* CARDS E LISTAS */
+.card { background:#fff; border-radius:12px; padding:14px; margin-bottom:10px; box-shadow:var(--sombra); border:1px solid #edf2f7; }
+.card-clickable { cursor:pointer; transition:transform 0.1s; }
+.card-clickable:active { transform:scale(0.98); }
+.card-title { font-size:16px; font-weight:600; margin-bottom:4px; }
+.card-sub { font-size:13px; color:var(--cinza-text); }
+.list-empty { text-align:center; padding:40px 20px; color:var(--cinza-text); }
+.list-empty .icon { font-size:48px; margin-bottom:12px; opacity:0.4; }
+
+/* BUSCA */
+.search-box { position:relative; margin-bottom:14px; }
+.search-box input { padding-left:42px; }
+.search-box::before { content:"🔍"; position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; }
+
+/* FAB */
+.fab { position:fixed; bottom:80px; right:calc(50% - 280px); background:var(--azul); color:#fff; width:56px; height:56px; border-radius:50%; border:none; font-size:28px; box-shadow:0 4px 12px rgba(30,58,95,0.4); cursor:pointer; z-index:50; display:flex; align-items:center; justify-content:center; }
+@media(max-width:600px){ .fab { right:20px; } }
+
+/* TABS INFERIORES */
+.tabbar { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; background:#fff; border-top:1px solid var(--cinza); display:flex; z-index:90; }
+.tab { flex:1; padding:10px 4px; text-align:center; cursor:pointer; color:var(--cinza-text); font-size:11px; font-weight:500; border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.tab .ico { font-size:22px; }
+.tab.active { color:var(--azul); }
+
+/* BADGES */
+.badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; text-transform:uppercase; }
+.badge-rascunho { background:#e2e8f0; color:#4a5568; }
+.badge-enviado { background:#bee3f8; color:#2c5282; }
+.badge-aprovado { background:#c6f6d5; color:#22543d; }
+.badge-recusado { background:#fed7d7; color:#742a2a; }
+
+/* LOGIN */
+.login-screen { min-height:100vh; background:linear-gradient(135deg, var(--azul) 0%, var(--azul-claro) 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+.login-box { background:#fff; padding:32px 24px; border-radius:16px; width:100%; max-width:380px; box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+.login-logo { width:80px; height:80px; background:var(--azul); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:40px; margin:0 auto 16px; }
+.login-title { text-align:center; font-size:22px; font-weight:700; color:var(--azul); margin-bottom:4px; }
+.login-sub { text-align:center; color:var(--cinza-text); margin-bottom:24px; font-size:13px; }
+
+/* CHECKLIST - ITEM */
+.checklist-item { background:#fff; border:1px solid var(--cinza); border-radius:12px; margin-bottom:10px; overflow:hidden; }
+.checklist-header { padding:12px 14px; display:flex; align-items:center; gap:10px; cursor:pointer; background:#f8fafc; }
+.checklist-header .nome { flex:1; font-weight:600; font-size:14px; }
+.checklist-body { padding:12px 14px; border-top:1px solid var(--cinza); display:none; }
+.checklist-item.open .checklist-body { display:block; }
+.status-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:10px; }
+.status-btn { padding:8px; border:1.5px solid var(--cinza); background:#fff; border-radius:8px; font-size:12px; cursor:pointer; text-align:center; }
+.status-btn.active { background:var(--azul); color:#fff; border-color:var(--azul); }
+
+/* FOTOS */
+.fotos-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px; }
+.foto-thumb { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; background:#edf2f7; cursor:pointer; }
+.foto-thumb img { width:100%; height:100%; object-fit:cover; }
+.foto-remove { position:absolute; top:2px; right:2px; background:rgba(229,62,62,0.9); color:#fff; border:none; width:22px; height:22px; border-radius:50%; font-size:14px; cursor:pointer; }
+.add-foto { aspect-ratio:1; border:2px dashed var(--cinza); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:28px; color:var(--cinza-text); cursor:pointer; background:#f8fafc; }
+
+/* SERVIÇOS */
+.servico-row { display:grid; grid-template-columns:1fr 60px 80px 40px; gap:6px; align-items:center; margin-bottom:6px; }
+.servico-row input, .servico-row select { padding:8px; font-size:13px; border:1px solid var(--cinza); border-radius:6px; }
+.servico-row .btn-del { background:var(--vermelho); color:#fff; border:none; border-radius:6px; padding:8px; cursor:pointer; }
+
+/* TABELA RESUMO */
+.resumo { background:#f8fafc; border-radius:10px; padding:12px; margin-top:12px; }
+.resumo-row { display:flex; justify-content:space-between; padding:6px 0; font-size:14px; }
+.resumo-row.total { border-top:2px solid var(--azul); margin-top:8px; padding-top:10px; font-size:18px; font-weight:700; color:var(--azul); }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; display:none; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.active { display:flex; }
+.modal { background:#fff; border-radius:14px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; }
+.modal-header { padding:14px 16px; border-bottom:1px solid var(--cinza); display:flex; align-items:center; justify-content:space-between; }
+.modal-header h3 { font-size:16px; }
+.modal-body { padding:16px; }
+.modal-footer { padding:12px 16px; border-top:1px solid var(--cinza); display:flex; gap:8px; }
+.modal-close { background:transparent; border:none; font-size:24px; cursor:pointer; color:var(--cinza-text); }
+
+/* VISUAL CARRO */
+.car-visual { background:#f8fafc; border-radius:12px; padding:16px; margin-bottom:14px; }
+.car-svg { width:100%; max-width:300px; margin:0 auto; display:block; }
+.car-svg .part { fill:#cbd5e0; stroke:#4a5568; stroke-width:1.5; cursor:pointer; transition:fill 0.15s; }
+.car-svg .part.avaria { fill:#fed7d7; stroke:var(--vermelho); }
+.car-svg .part:hover { fill:#bee3f8; }
+
+/* PREVIEW PDF */
+.pdf-preview { background:#fff; padding:20px; border-radius:8px; box-shadow:var(--sombra); max-height:70vh; overflow-y:auto; }
+.pdf-preview h2 { color:var(--azul); border-bottom:2px solid var(--azul); padding-bottom:8px; margin-bottom:12px; }
+.pdf-preview table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+.pdf-preview th, .pdf-preview td { border:1px solid var(--cinza); padding:6px 8px; text-align:left; }
+.pdf-preview th { background:var(--azul); color:#fff; }
+
+/* TOAST */
+.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#1a202c; color:#fff; padding:12px 20px; border-radius:8px; z-index:300; font-size:14px; opacity:0; transition:opacity 0.3s; }
+.toast.show { opacity:1; }
+
+/* GRID DASHBOARD */
+.dash-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+.dash-card { background:#fff; border-radius:12px; padding:16px; box-shadow:var(--sombra); text-align:center; cursor:pointer; border:1px solid #edf2f7; }
+.dash-card .num { font-size:28px; font-weight:700; color:var(--azul); }
+.dash-card .lbl { font-size:12px; color:var(--cinza-text); margin-top:4px; }
+
+.filtros { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:10px; }
+.filtro-chip { padding:8px 14px; border-radius:20px; background:var(--cinza); font-size:13px; cursor:pointer; white-space:nowrap; border:none; }
+.filtro-chip.active { background:var(--azul); color:#fff; }
+
+.assinatura-box { border:2px dashed var(--cinza); border-radius:8px; padding:30px; text-align:center; color:var(--cinza-text); margin-top:16px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🔧</div>
+    <div class="login-title">OficinaApp</div>
+    <div class="login-sub">Funilaria e Pintura</div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" class="form-control" placeholder="seu@email.com" value="oficina@demo.com">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="loginSenha" class="form-control" placeholder="••••••" value="123456">
+    </div>
+    <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
+    <p style="text-align:center; margin-top:16px; font-size:12px; color:var(--cinza-text);">Demo: oficina@demo.com / 123456</p>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="mainApp" style="display:none;">
+
+<!-- HEADER -->
+<div class="header" id="mainHeader">
+  <div class="logo-mini">🔧</div>
+  <h1 id="headerTitle">Painel</h1>
+  <button class="btn-icon" onclick="irPara('config')" title="Configurações">⚙️</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="screen active" id="screen-home">
+  <div class="dash-grid">
+    <div class="dash-card" onclick="irPara('clientes')">
+      <div class="num" id="dashClientes">0</div>
+      <div class="lbl">Clientes</div>
+    </div>
+    <div class="dash-card" onclick="irPara('orcamentos')">
+      <div class="num" id="dashOrcamentos">0</div>
+      <div class="lbl">Orçamentos</div>
+    </div>
+    <div class="dash-card" onclick="irPara('checklist-novo')">
+      <div class="num" style="font-size:32px;">➕</div>
+      <div class="lbl">Novo Checklist</div>
+    </div>
+    <div class="dash-card" onclick="irPara('orcamentos')">
+      <div class="num" id="dashPendentes" style="color:var(--amarelo);">0</div>
+      <div class="lbl">Pendentes</div>
+    </div>
+  </div>
+  <h3 style="margin-bottom:10px; color:var(--azul);">Ações Rápidas</h3>
+  <button class="btn btn-primary" style="margin-bottom:8px;" onclick="irPara('cliente-novo')">➕ Novo Cliente</button>
+  <button class="btn btn-outline" style="margin-bottom:8px;" onclick="irPara('checklist-novo')">📋 Novo Checklist</button>
+  <button class="btn btn-outline" onclick="irPara('servicos')">🛠️ Catálogo de Serviços</button>
+</div>
+
+<!-- CLIENTES LISTA -->
+<div class="screen" id="screen-clientes">
+  <div class="search-box">
+    <input type="text" class="form-control" id="buscaCliente" placeholder="Buscar por nome, telefone ou placa" oninput="renderClientes()">
+  </div>
+  <div id="listaClientes"></div>
+  <button class="fab" onclick="irPara('cliente-novo')">+</button>
+</div>
+
+<!-- CLIENTE FORM -->
+<div class="screen" id="screen-cliente-novo">
+  <h2 style="margin-bottom:14px; color:var(--azul);" id="clienteFormTitulo">Novo Cliente</h2>
+  <div class="form-group">
+    <label>Nome *</label>
+    <input type="text" id="cNome" class="form-control" placeholder="Nome completo">
+  </div>
+  <div class="form-group">
+    <label>CPF/CNPJ</label>
+    <input type="text" id="cDoc" class="form-control" placeholder="000.000.000-00">
+  </div>
+  <div class="form-group">
+    <label>Telefone/WhatsApp *</label>
+    <input type="tel" id="cTel" class="form-control" placeholder="(11) 99999-9999">
+  </div>
+  <div class="form-group">
+    <label>E-mail</label>
+    <input type="email" id="cEmail" class="form-control" placeholder="email@exemplo.com">
+  </div>
+  <div class="form-group">
+    <label>Endereço</label>
+    <textarea id="cEnd" class="form-control" placeholder="Rua, número, bairro, cidade"></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+  <button class="btn btn-secondary" style="margin-top:8px;" onclick="irPara('clientes')">Cancelar</button>
+</div>
+
+<!-- CLIENTE DETALHE -->
+<div class="screen" id="screen-cliente-detalhe">
+  <div id="clienteDetalhe"></div>
+</div>
+
+<!-- VEÍCULO FORM -->
+<div class="screen" id="screen-veiculo-novo">
+  <h2 style="margin-bottom:14px; color:var(--azul);" id="veicFormTitulo">Novo Veículo</h2>
+  <div class="form-group">
+    <label>Placa *</label>
+    <input type="text" id="vPlaca" class="form-control" placeholder="ABC-1D23" style="text-transform:uppercase;">
+  </div>
+  <div class="form-group">
+    <label>Marca *</label>
+    <input type="text" id="vMarca" class="form-control" placeholder="Ex: Volkswagen">
+  </div>
+  <div class="form-group">
+    <label>Modelo *</label>
+    <input type="text" id="vModelo" class="form-control" placeholder="Ex: Gol">
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+    <div class="form-group">
+      <label>Ano</label>
+      <input type="number" id="vAno" class="form-control" placeholder="2020">
+    </div>
+    <div class="form-group">
+      <label>Cor</label>
+      <input type="text" id="vCor" class="form-control" placeholder="Prata">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Quilometragem</label>
+    <input type="number" id="vKm" class="form-control" placeholder="85000">
+  </div>
+  <button class="btn btn-primary" onclick="salvarVeiculo()">💾 Salvar Veículo</button>
+  <button class="btn btn-secondary" style="margin-top:8px;" onclick="voltarDetalheCliente()">Cancelar</button>
+</div>
+
+<!-- CHECKLIST NOVO (seleção) -->
+<div class="screen" id="screen-checklist-novo">
+  <h2 style="margin-bottom:14px; color:var(--azul);">Novo Checklist</h2>
+  <div class="form-group">
+    <label>Cliente *</label>
+    <select id="ckCliente" class="form-control" onchange="carregarVeiculosChecklist()">
+      <option value="">Selecione um cliente</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Veículo *</label>
+    <select id="ckVeiculo" class="form-control">
+      <option value="">Selecione um veículo</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" onclick="iniciarChecklist()">📋 Iniciar Checklist</button>
+</div>
+
+<!-- CHECKLIST -->
+<div class="screen" id="screen-checklist">
+  <div class="car-visual">
+    <h4 style="text-align:center; margin-bottom:8px; color:var(--azul);">Esquema Visual (toque para marcar avarias)</h4>
+    <svg class="car-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
+      <rect class="part" data-parte="capô" x="60" y="20" width="80" height="50" rx="8"/>
+      <text x="100" y="50" text-anchor="middle" font-size="10" fill="#1a202c">Capô</text>
+      <rect class="part" data-parte="para-brisa" x="55" y="75" width="90" height="30" rx="4" fill="#bee3f8"/>
+      <rect class="part" data-parte="teto" x="55" y="110" width="90" height="60" rx="4"/>
+      <text x="100" y="145" text-anchor="middle" font-size="10" fill="#1a202c">Teto</text>
+      <rect class="part" data-parte="para-lama-ld" x="30" y="20" width="25" height="50" rx="4"/>
+      <rect class="part" data-parte="porta-le" x="30" y="110" width="25" height="60" rx="4"/>
+      <rect class="part" data-parte="porta-re" x="30" y="175" width="25" height="55" rx="4"/>
+      <rect class="part" data-parte="para-lama-lt" x="30" y="235" width="25" height="50" rx="4"/>
+      <rect class="part" data-parte="para-lama-rd" x="145" y="20" width="25" height="50" rx="4"/>
+      <rect class="part" data-parte="porta-lado" x="145" y="110" width="25" height="60" rx="4"/>
+      <rect class="part" data-parte="porta-ld" x="145" y="175" width="25" height="55" rx="4"/>
+      <rect class="part" data-parte="para-lama-lt2" x="145" y="235" width="25" height="50" rx="4"/>
+      <rect class="part" data-parte="vidro-tras" x="55" y="175" width="90" height="30" rx="4" fill="#bee3f8"/>
+      <rect class="part" data-parte="tampa-tras" x="60" y="210" width="80" height="40" rx="8"/>
+      <text x="100" y="235" text-anchor="middle" font-size="10" fill="#1a202c">Tampa tr.</text>
+      <rect class="part" data-parte="parach-td" x="55" y="255" width="90" height="25" rx="4"/>
+      <text x="100" y="272" text-anchor="middle" font-size="9" fill="#1a202c">P-choque tr.</text>
+      <circle class="part" data-parte="farol-de" cx="70" cy="30" r="8"/>
+      <circle class="part" data-parte="farol-dd" cx="130" cy="30" r="8"/>
+      <circle class="part" data-parte="lanterna-te" cx="70" cy="270" r="8"/>
+      <circle class="part" data-parte="lanterna-td" cx="130" cy="270" r="8"/>
+    </svg>
+  </div>
+
+  <div class="form-group">
+    <label>Nível de Combustível</label>
+    <select id="ckCombustivel" class="form-control">
+      <option>Reserva</option><option>1/4</option><option>1/2</option><option>3/4</option><option selected>Full</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Quilometragem atual</label>
+    <input type="number" id="ckKm" class="form-control" placeholder="0">
+  </div>
+  <div class="form-group">
+    <label>Itens deixados no carro</label>
+    <textarea id="ckItens" class="form-control" placeholder="Ex: tapete, estepe, documento..."></textarea>
+  </div>
+
+  <h3 style="margin:14px 0 10px; color:var(--azul);">Itens da Carroceria</h3>
+  <div id="listaChecklist"></div>
+
+  <h3 style="margin:14px 0 10px; color:var(--azul);">Resumo do Orçamento</h3>
+  <div class="resumo">
+    <div class="resumo-row"><span>Subtotal:</span><span id="resSubtotal">R$ 0,00</span></div>
+    <div style="display:flex; gap:6px; margin:8px 0;">
+      <input type="number" id="resDesconto" class="form-control" placeholder="Desconto" style="flex:1;" oninput="calcularTotal()">
+      <select id="resTipoDesc" class="form-control" style="width:80px;" onchange="calcularTotal()">
+        <option value="R$">R$</option><option value="%">%</option>
+      </select>
+    </div>
+    <div class="resumo-row total"><span>TOTAL:</span><span id="resTotal">R$ 0,00</span></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+    <button class="btn btn-secondary" onclick="salvarRascunho()">💾 Rascunho</button>
+    <button class="btn btn-success" onclick="gerarOrcamento()">📄 Gerar Orçamento</button>
+  </div>
+</div>
+
+<!-- ORÇAMENTOS LISTA -->
+<div class="screen" id="screen-orcamentos">
+  <div class="filtros">
+    <button class="filtro-chip active" data-filtro="todos" onclick="filtrarOrc(this)">Todos</button>
+    <button class="filtro-chip" data-filtro="rascunho" onclick="filtrarOrc(this)">Rascunho</button>
+    <button class="filtro-chip" data-filtro="enviado" onclick="filtrarOrc(this)">Enviado</button>
+    <button class="filtro-chip" data-filtro="aprovado" onclick="filtrarOrc(this)">Aprovado</button>
+    <button class="filtro-chip" data-filtro="recusado" onclick="filtrarOrc(this)">Recusado</button>
+  </div>
+  <div id="listaOrcamentos"></div>
+</div>
+
+<!-- ORÇAMENTO DETALHE / PREVIEW -->
+<div class="screen" id="screen-orcamento-detalhe">
+  <div id="orcDetalhe"></div>
+</div>
+
+<!-- SERVIÇOS CATÁLOGO -->
+<div class="screen" id="screen-servicos">
+  <h2 style="margin-bottom:14px; color:var(--azul);">Catálogo de Serviços</h2>
+  <div id="listaServicos"></div>
+  <button class="fab" onclick="abrirModalServico()">+</button>
+</div>
+
+<!-- CONFIG -->
+<div class="screen" id="screen-config">
+  <h2 style="margin-bottom:14px; color:var(--azul);">Configurações da Oficina</h2>
+  <div class="form-group">
+    <label>Nome da Oficina</label>
+    <input type="text" id="cfgNome" class="form-control">
+  </div>
+  <div class="form-group">
+    <label>CNPJ</label>
+    <input type="text" id="cfgCnpj" class="form-control">
+  </div>
+  <div class="form-group">
+    <label>Telefone</label>
+    <input type="text" id="cfgTel" class="form-control">
+  </div>
+  <div class="form-group">
+    <label>Endereço</label>
+    <textarea id="cfgEnd" class="form-control"></textarea>
+  </div>
+  <div class="form-group">
+    <label>Logo (imagem)</label>
+    <input type="file" id="cfgLogo" class="form-control" accept="image/*" onchange="uploadLogo(event)">
+    <div id="cfgLogoPreview" style="margin-top:8px;"></div>
+  </div>
+  <div class="form-group">
+    <label>Validade do Orçamento (dias)</label>
+    <input type="number" id="cfgValidade" class="form-control" value="15">
+  </div>
+  <div class="form-group">
+    <label>Formas de Pagamento</label>
+    <textarea id="cfgPagto" class="form-control" placeholder="Pix, Cartão, Boleto..."></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="salvarConfig()">💾 Salvar Configurações</button>
+  <button class="btn btn-danger" style="margin-top:8px;" onclick="fazerLogout()">🚪 Sair</button>
+</div>
+
+<!-- TABBAR -->
+<div class="tabbar">
+  <button class="tab active" data-tab="home" onclick="irPara('home')"><span class="ico">🏠</span>Início</button>
+  <button class="tab" data-tab="clientes" onclick="irPara('clientes')"><span class="ico">👥</span>Clientes</button>
+  <button class="tab" data-tab="checklist-novo" onclick="irPara('checklist-novo')"><span class="ico">📋</span>Checklist</button>
+  <button class="tab" data-tab="orcamentos" onclick="irPara('orcamentos')"><span class="ico">📄</span>Orçamentos</button>
+</div>
+
+</div> <!-- mainApp -->
+
+<!-- MODAL VISUALIZAÇÃO FOTO -->
+<div class="modal-overlay" id="modalFoto">
+  <div class="modal" style="max-width:90vw; background:#000;">
+    <div class="modal-header" style="background:#000; border:none;">
+      <h3 style="color:#fff;">Foto</h3>
+      <button class="modal-close" style="color:#fff;" onclick="fecharModal('modalFoto')">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <img id="modalFotoImg" style="width:100%; display:block;">
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SERVIÇO -->
+<div class="modal-overlay" id="modalServico">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalServicoTitulo">Novo Serviço</h3>
+      <button class="modal-close" onclick="fecharModal('modalServico')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome do Serviço</label>
+        <input type="text" id="sNome" class="form-control" placeholder="Ex: Pintura de porta">
+      </div>
+      <div class="form-group">
+        <label>Preço Padrão (R$)</label>
+        <input type="number" id="sPreco" class="form-control" step="0.01" placeholder="0,00">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" style="flex:1;" onclick="fecharModal('modalServico')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="salvarServico()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PREVIEW PDF -->
+<div class="modal-overlay" id="modalPdf">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3>Pré-visualização do Orçamento</h3>
+      <button class="modal-close" onclick="fecharModal('modalPdf')">×</button>
+    </div>
+    <div class="modal-body" id="pdfPreviewContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal('modalPdf')">← Voltar e Editar</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="baixarPdf()">📥 Baixar PDF</button>
+      <button class="btn btn-success" onclick="compartilharPdf()">📤 Compartilhar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+</div> <!-- app -->
+
+<script>
+// ============ ESTADO ============
+let DB = {
+  clientes: [],
+  veiculos: [],
+  checklists: [],
+  orcamentos: [],
+  servicos: [],
+  config: {
+    nome: 'Oficina do João',
+    cnpj: '00.000.000/0001-00',
+    tel: '(11) 99999-9999',
+    end: 'Rua das Oficinas, 123 - São Paulo/SP',
+    logo: '',
+    validade: 15,
+    pagto: 'Pix, Cartão (até 3x sem juros), Boleto, Dinheiro'
+  },
+  usuario: { email: 'oficina@demo.com', senha: '123456' }
+};
+
+let estado = {
+  clienteEditando: null,
+  veiculoEditando: null,
+  checklistAtual: null,
+  orcamentoAtual: null,
+  servicoEditando: null,
+  filtroOrc: 'todos'
+};
+
+const ITENS_CARROCERIA = [
+  'Para-choque dianteiro','Para-choque traseiro','Capô','Para-lama dianteiro esquerdo',
+  'Para-lama dianteiro direito','Para-lama traseiro esquerdo','Para-lama traseiro direito',
+  'Porta dianteira esquerda','Porta dianteira direita','Porta traseira esquerda','Porta traseira direita',
+  'Teto','Coluna A','Coluna B','Coluna C','Tampa traseira / Porta-malas',
+  'Farol dianteiro esquerdo','Farol dianteiro direito','Lanterna traseira esquerda','Lanterna traseira direita',
+  'Para-brisa','Vidro traseiro','Vidros laterais','Rodas/Pneus','Interior (bancos/painel)','Retrovisores'
+];
+
+const STATUS_AVARIA = ['Sem avaria','Amassado','Arranhado','Trincado','Precisa pintura','Precisa troca'];
+
+// ============ PERSISTÊNCIA ============
+function salvarDB(){ localStorage.setItem('oficinaapp_db', JSON.stringify(DB)); }
+function carregarDB(){
+  const d = localStorage.getItem('oficinaapp_db');
+  if(d){ DB = JSON.parse(d); }
+  else {
+    // Dados iniciais de exemplo
+    DB.servicos = [
+      {id:1, nome:'Martelinho de ouro', preco:150},
+      {id:2, nome:'Pintura de peça', preco:450},
+      {id:3, nome:'Polimento técnico', preco:280},
+      {id:4, nome:'Troca de para-choque', preco:350},
+      {id:5, nome:'Desamassado simples', preco:120}
+    ];
+    salvarDB();
+  }
+}
+
+// ============ LOGIN ============
+function fazerLogin(){
+  const e = document.getElementById('loginEmail').value.trim();
+  const s = document.getElementById('loginSenha').value;
+  if(e === DB.usuario.email && s === DB.usuario.senha){
+    localStorage.setItem('oficinaapp_logado','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+    atualizarDashboard();
+  } else {
+    toast('E-mail ou senha incorretos');
+  }
+}
+function fazerLogout(){
+  if(confirm('Deseja realmente sair?')){
+    localStorage.removeItem('oficinaapp_logado');
+    location.reload();
+  }
+}
+function verificarLogin(){
+  if(localStorage.getItem('oficinaapp_logado')==='1'){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+    atualizarDashboard();
+  }
+}
+
+// ============ NAVEGAÇÃO ============
+function irPara(tela){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const tab = document.querySelector(`.tab[data-tab="${tela}"]`);
+  if(tab) tab.classList.add('active');
+
+  const titulos = {
+    'home':'Painel','clientes':'Clientes','cliente-novo':'Cliente',
+    'cliente-detalhe':'Detalhes','veiculo-novo':'Veículo','checklist-novo':'Novo Checklist',
+    'checklist':'Checklist','orcamentos':'Orçamentos','orcamento-detalhe':'Orçamento',
+    'servicos':'Serviços','config':'Configurações'
+  };
+  document.getElementById('headerTitle').textContent = titulos[tela] || 'OficinaApp';
+
+  const screen = document.getElementById('screen-'+tela);
+  if(screen) screen.classList.add('active');
+
+  // Ações por tela
+  if(tela==='home') atualizarDashboard();
+  if(tela==='clientes') renderClientes();
+  if(tela==='cliente-novo') prepararFormCliente();
+  if(tela==='cliente-detalhe') renderClienteDetalhe();
+  if(tela==='veiculo-novo') prepararFormVeiculo();
+  if(tela==='checklist-novo') prepararChecklistNovo();
+  if(tela==='orcamentos') renderOrcamentos();
+  if(tela==='orcamento-detalhe') renderOrcamentoDetalhe();
+  if(tela==='servicos') renderServicos();
+  if(tela==='config') carregarConfig();
+
+  window.scrollTo(0,0);
+}
+
+// ============ DASHBOARD ============
+function atualizarDashboard(){
+  document.getElementById('dashClientes').textContent = DB.clientes.length;
+  document.getElementById('dashOrcamentos').textContent = DB.orcamentos.length;
+  document.getElementById('dashPendentes').textContent = DB.orcamentos.filter(o=>o.status==='enviado').length;
+}
+
+// ============ CLIENTES ============
+function prepararFormCliente(){
+  estado.clienteEditando = null;
+  document.getElementById('clienteFormTitulo').textContent = 'Novo Cliente';
+  ['cNome','cDoc','cTel','cEmail','cEnd'].forEach(id=>document.getElementById(id).value='');
+}
+function editarCliente(id){
+  const c = DB.clientes.find(x=>x.id===id);
+  if(!c) return;
+  estado.clienteEditando = id;
+  document.getElementById('clienteFormTitulo').textContent = 'Editar Cliente';
+  document.getElementById('cNome').value = c.nome||'';
+  document.getElementById('cDoc').value = c.doc||'';
+  document.getElementById('cTel').value = c.tel||'';
+  document.getElementById('cEmail').value = c.email||'';
+  document.getElementById('cEnd').value = c.end||'';
+  irPara('cliente-novo');
+}
+function salvarCliente(){
+  const nome = document.getElementById('cNome').value.trim();
+  const tel = document.getElementById('cTel').value.trim();
+  if(!nome || !tel){ toast('Nome e telefone são obrigatórios'); return; }
+  const dados = {
+    nome, tel,
+    doc: document.getElementById('cDoc').value.trim(),
+    email: document.getElementById('cEmail').value.trim(),
+    end: document.getElementById('cEnd').value.trim()
+  };
+  if(estado.clienteEditando){
+    const c = DB.clientes.find(x=>x.id===estado.clienteEditando);
+    Object.assign(c, dados);
+    toast('Cliente atualizado!');
+  } else {
+    dados.id = Date.now();
+    dados.criado = new Date().toISOString();
+    DB.clientes.push(dados);
+    toast('Cliente cadastrado!');
+  }
+  salvarDB();
+  estado.clienteEditando = null;
+  irPara('clientes');
+}
+function excluirCliente(id){
+  if(!confirm('Excluir este cliente e todos os seus veículos/orçamentos?')) return;
+  DB.clientes = DB.clientes.filter(c=>c.id!==id);
+  const veics = DB.veiculos.filter(v=>v.clienteId===id).map(v=>v.id);
+  DB.veiculos = DB.veiculos.filter(v=>v.clienteId!==id);
+  DB.orcamentos = DB.orcamentos.filter(o=>!veics.includes(o.veiculoId));
+  salvarDB();
+  irPara('clientes');
+  toast('Cliente excluído');
+}
+function renderClientes(){
+  const busca = document.getElementById('buscaCliente').value.toLowerCase();
+  const lista = document.getElementById('listaClientes');
+  let filtrados = DB.clientes;
+  if(busca){
+    filtrados = DB.clientes.filter(c=>{
+      const veics = DB.veiculos.filter(v=>v.clienteId===c.id);
+      const placas = veics.map(v=>v.placa.toLowerCase()).join(' ');
+      return c.nome.toLowerCase().includes(busca) ||
+             (c.tel||'').toLowerCase().includes(busca) ||
+             placas.includes(busca);
+    });
+  }
+  if(filtrados.length===0){
+    lista.innerHTML = `<div class="list-empty"><div class="icon">👥</div><p>Nenhum cliente encontrado</p></div>`;
+    return;
+  }
+  lista.innerHTML = filtrados.map(c=>{
+    const veics = DB.veiculos.filter(v=>v.clienteId===c.id);
+    const orcs = DB.orcamentos.filter(o=>veics.some(v=>v.id===o.veiculoId));
+    return `<div class="card card-clickable" onclick="abrirCliente(${c.id})">
+      <div class="card-title">${c.nome}</div>
+      <div class="card-sub">📱 ${c.tel||'-'}</div>
+      <div class="card-sub">🚗 ${veics.length} veículo(s) • 📄 ${orcs.length} orçamento(s)</div>
+    </div>`;
+  }).join('');
+}
+function abrirCliente(id){
+  estado.clienteEditando = id;
+  irPara('cliente-detalhe');
+}
+function renderClienteDetalhe(){
+  const c = DB.clientes.find(x=>x.id===estado.clienteEditando);
+  if(!c){ irPara('clientes'); return; }
+  const veics = DB.veiculos.filter(v=>v.clienteId===c.id);
+  const orcs = DB.orcamentos.filter(o=>veics.some(v=>v.id===o.veiculoId));
+  const cont = document.getElementById('clienteDetalhe');
+  cont.innerHTML = `
+    <div class="card">
+      <div class="card-title" style="font-size:20px;">${c.nome}</div>
+      <div class="card-sub">📋 ${c.doc||'CPF/CNPJ não informado'}</div>
+      <div class="card-sub">📱 ${c.tel||'-'}</div>
+      <div class="card-sub">✉️ ${c.email||'-'}</div>
+      <div class="card-sub">📍 ${c.end||'-'}</div>
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <button class="btn btn-sm btn-outline" onclick="editarCliente(${c.id})">✏️ Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="excluirCliente(${c.id})">🗑️ Excluir</button>
+      </div>
+    </div>
+    <h3 style="margin:14px 0 10px; color:var(--azul);">🚗 Veículos</h3>
+    ${veics.length===0?'<div class="list-empty"><p>Nenhum veículo cadastrado</p></div>':
+      veics.map(v=>`
+        <div class="card card-clickable" onclick="abrirVeiculo(${v.id})">
+          <div class="card-title">${v.marca} ${v.modelo}</div>
+          <div class="card-sub">Placa: <b>${v.placa}</b> • ${v.ano||'-'} • ${v.cor||'-'}</div>
+          <div class="card-sub">${v.km?Number(v.km).toLocaleString('pt-BR')+' km':'-'}</div>
+        </div>`).join('')}
+    <button class="btn btn-outline" style="margin-top:8px;" onclick="novoVeiculoCliente()">➕ Adicionar Veículo</button>
+    <h3 style="margin:14px 0 10px; color:var(--azul);">📄 Histórico de Orçamentos</h3>
+    ${orcs.length===0?'<div class="list-empty"><p>Nenhum orçamento</p></div>':
+      orcs.map(o=>{
+        const v = DB.veiculos.find(x=>x.id===o.veiculoId);
+        return `<div class="card card-clickable" onclick="abrirOrcamento(${o.id})">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-title">#${o.numero} - ${v?v.placa:''}</div>
+            <span class="badge badge-${o.status}">${o.status}</span>
+          </div>
+          <div class="card-sub">${formatarData(o.data)} • ${formatarMoeda(o.total)}</div>
+        </div>`;
+      }).join('')}
+  `;
+}
+function voltarDetalheCliente(){
+  if(estado.clienteEditando) irPara('cliente-detalhe');
+  else irPara('clientes');
+}
+
+// ============ VEÍCULOS ============
+function novoVeiculoCliente(){
+  estado.veiculoEditando = null;
+  irPara('veiculo-novo');
+}
+function prepararFormVeiculo(){
+  document.getElementById('veicFormTitulo').textContent = estado.veiculoEditando?'Editar Veículo':'Novo Veículo';
+  ['vPlaca','vMarca','vModelo','vAno','vCor','vKm'].forEach(id=>document.getElementById(id).value='');
+  if(estado.veiculoEditando){
+    const v = DB.veiculos.find(x=>x.id===estado.veiculoEditando);
+    if(v){
+      document.getElementById('vPlaca').value=v.placa;
+      document.getElementById('vMarca').value=v.marca;
+      document.getElementById('vModelo').value=v.modelo;
+      document.getElementById('vAno').value=v.ano||'';
+      document.getElementById('vCor').value=v.cor||'';
+      document.getElementById('vKm').value=v.km||'';
+    }
+  }
+}
+function abrirVeiculo(id){
+  estado.veiculoEditando = id;
+  irPara('veiculo-novo');
+}
+function salvarVeiculo(){
+  const placa = document.getElementById('vPlaca').value.trim().toUpperCase();
+  const marca = document.getElementById('vMarca').value.trim();
+  const modelo = document.getElementById('vModelo').value.trim();
+  if(!placa || !marca || !modelo){ toast('Placa, marca e modelo são obrigatórios'); return; }
+  const dados = {
+    placa, marca, modelo,
+    ano: document.getElementById('vAno').value,
+    cor: document.getElementById('vCor').value.trim(),
+    km: document.getElementById('vKm').value
+  };
+  if(estado.veiculoEditando){
+    const v = DB.veiculos.find(x=>x.id===estado.veiculoEditando);
+    Object.assign(v, dados);
+    toast('Veículo atualizado!');
+    const veic = DB.veiculos.find(x=>x.id===estado.veiculoEditando);
+    estado.clienteEditando = veic.clienteId;
+    estado.veiculoEditando = null;
+    irPara('cliente-detalhe');
+  } else {
+    dados.id = Date.now();
+    dados.clienteId = estado.clienteEditando;
+    DB.veiculos.push(dados);
+    salvarDB();
+    toast('Veículo cadastrado!');
+    estado.veiculoEditando = null;
+    irPara('cliente-detalhe');
+  }
+  salvarDB();
+}
+
+// ============ CHECKLIST ============
+function prepararChecklistNovo(){
+  const sel = document.getElementById('ckCliente');
+  sel.innerHTML = '<option value="">Selecione um cliente</option>' +
+    DB.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('ckVeiculo').innerHTML = '<option value="">Selecione um veículo</option>';
+}
+function carregarVeiculosChecklist(){
+  const cid = document.getElementById('ckCliente').value;
+  const sel = document.getElementById('ckVeiculo');
+  if(!cid){ sel.innerHTML='<option value="">Selecione um veículo</option>'; return; }
+  const veics = DB.veiculos.filter(v=>v.clienteId==cid);
+  sel.innerHTML = '<option value="">Selecione um veículo</option>' +
+    veics.map(v=>`<option value="${v.id}">${v.placa} - ${v.marca} ${v.modelo}</option>`).join('');
+}
+function iniciarChecklist(){
+  const cid = document.getElementById('ckCliente').value;
+  const vid = document.getElementById('ckVeiculo').value;
+  if(!cid || !vid){ toast('Selecione cliente e veículo'); return; }
+  const veic = DB.veiculos.find(v=>v.id==vid);
+  estado.checklistAtual = {
+    id: Date.now(),
+    clienteId: +cid,
+    veiculoId: +vid,
+    data: new Date().toISOString(),
+    combustivel: 'Full',
+    km: veic.km || '',
+    itens: '',
+    partesVisuais: [],
+    itensCarroceria: ITENS_CARROCERIA.map(nome=>({
+      nome, status:'Sem avaria', observacao:'', fotos:[], servicos:[]
+    }))
+  };
+  renderChecklist();
+  irPara('checklist');
+}
+function renderChecklist(){
+  const ck = estado.checklistAtual;
+  document.getElementById('ckCombustivel').value = ck.combustivel;
+  document.getElementById('ckKm').value = ck.km;
+  document.getElementById('ckItens').value = ck.itens;
+
+  // Renderizar esquema visual
+  document.querySelectorAll('.car-svg .part').forEach(p=>{
+    const parte = p.getAttribute('data-parte');
+    p.classList.toggle('avaria', ck.partesVisuais.includes(parte));
+    p.onclick = ()=>{
+      if(ck.partesVisuais.includes(parte)){
+        ck.partesVisuais = ck.partesVisuais.filter(x=>x!==parte);
+      } else {
+        ck.partesVisuais.push(parte);
+      }
+      p.classList.toggle('avaria');
+    };
+  });
+
+  // Itens
+  const lista = document.getElementById('listaChecklist');
+  lista.innerHTML = ck.itensCarroceria.map((item, idx)=>`
+    <div class="checklist-item" id="ck-item-${idx}">
+      <div class="checklist-header" onclick="toggleChecklistItem(${idx})">
+        <span class="nome">${item.nome}</span>
+        <span class="badge badge-${item.status==='Sem avaria'?'aprovado':'rascunho'}" style="font-size:10px;">${item.status}</span>
+        <span style="color:var(--cinza-text);">▼</span>
+      </div>
+      <div class="checklist-body">
+        <label style="font-size:12px; font-weight:600; color:var(--cinza-text);">Status:</label>
+        <div class="status-grid">
+          ${STATUS_AVARIA.map(s=>`<button class="status-btn ${item.status===s?'active':''}" onclick="setStatus(${idx},'${s}')">${s}</button>`).join('')}
+        </div>
+        <label style="font-size:12px; font-weight:600; color:var(--cinza-text);">Observação:</label>
+        <textarea class="form-control" onchange="setObs(${idx}, this.value)" placeholder="Detalhes...">${item.observacao||''}</textarea>
+        <label style="font-size:12px; font-weight:600; color:var(--cinza-text); margin-top:8px; display:block;">Fotos:</label>
+        <div class="fotos-grid">
+          ${item.fotos.map((f,fi)=>`<div class="foto-thumb" onclick="verFoto('${fi}','${idx}')">
+            <img src="${f}">
+            <button class="foto-remove" onclick="event.stopPropagation(); removerFoto(${idx},${fi})">×</button>
+          </div>`).join('')}
+          <label class="add-foto">
+            📷
+            <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="adicionarFoto(${idx}, event)">
+          </label>
+        </div>
+        <label style="font-size:12px; font-weight:600; color:var(--cinza-text); margin-top:10px; display:block;">Serviços:</label>
+        <div id="servicos-${idx}">
+          ${item.servicos.map((s,si)=>`
+            <div class="servico-row">
+              <select onchange="setServNome(${idx},${si},this.value)">
+                <option value="">Serviço...</option>
+                ${DB.servicos.map(sv=>`<option ${s.nome===sv.nome?'selected':''}>${sv.nome}</option>`).join('')}
+                <option value="__outro">+ Outro</option>
+              </select>
+              <input type="number" min="1" value="${s.qtd||1}" onchange="setServQtd(${idx},${si},this.value)" placeholder="Qtd">
+              <input type="number" step="0.01" value="${s.valor||0}" onchange="setServValor(${idx},${si},this.value)" placeholder="R$">
+              <button class="btn-del" onclick="removerServico(${idx},${si})">×</button>
+            </div>`).join('')}
+        </div>
+        <button class="btn btn-sm btn-outline" style="margin-top:6px;" onclick="adicionarServico(${idx})">➕ Serviço</button>
+      </div>
+    </div>
+  `).join('');
+  calcularTotal();
+}
+function toggleChecklistItem(idx){
+  document.getElementById('ck-item-'+idx).classList.toggle('open');
+}
+function setStatus(idx, status){
+  estado.checklistAtual.itensCarroceria[idx].status = status;
+  renderChecklist();
+  document.getElementById('ck-item-'+idx).classList.add('open');
+}
+function setObs(idx, val){ estado.checklistAtual.itensCarroceria[idx].observacao = val; }
+function adicionarFoto(idx, event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    // Reduzir imagem para caber no localStorage
+    comprimirImagem(e.target.result, 1200, 0.7, (dataUrl)=>{
+      estado.checklistAtual.itensCarroceria[idx].fotos.push(dataUrl);
+      renderChecklist();
+      document.getElementById('ck-item-'+idx).classList.add('open');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+function comprimirImagem(src, maxW, qualidade, cb){
+  const img = new Image();
+  img.onload = ()=>{
+    const canvas = document.createElement('canvas');
+    let w = img.width, h = img.height;
+    if(w > maxW){ h = h*maxW/w; w = maxW; }
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    cb(canvas.toDataURL('image/jpeg', qualidade));
+  };
+  img.src = src;
+}
+function removerFoto(idx, fi){
+  estado.checklistAtual.itensCarroceria[idx].fotos.splice(fi,1);
+  renderChecklist();
+  document.getElementById('ck-item-'+idx).classList.add('open');
+}
+function verFoto(fi, idx){
+  const src = estado.checklistAtual.itensCarroceria[idx].fotos[fi];
+  document.getElementById('modalFotoImg').src = src;
+  document.getElementById('modalFoto').classList.add('active');
+}
+function adicionarServico(idx){
+  estado.checklistAtual.itensCarroceria[idx].servicos.push({nome:'', qtd:1, valor:0});
+  renderChecklist();
+  document.getElementById('ck-item-'+idx).classList.add('open');
+}
+function setServNome(idx, si, val){
+  if(val==='__outro'){ val = prompt('Nome do serviço:'); if(!val){ estado.checklistAtual.itensCarroceria[idx].servicos.splice(si,1); renderChecklist(); document.getElementById('ck-item-'+idx).classList.add('open'); return; } }
+  estado.checklistAtual.itensCarroceria[idx].servicos[si].nome = val;
+  const sv = DB.servicos.find(s=>s.nome===val);
+  if(sv) estado.checklistAtual.itensCarroceria[idx].servicos[si].valor = sv.preco;
+  calcularTotal();
+}
+function setServQtd(idx, si, val){ estado.checklistAtual.itensCarroceria[idx].servicos[si].qtd = +val||1; calcularTotal(); }
+function setServValor(idx, si, val){ estado.checklistAtual.itensCarroceria[idx].servicos[si].valor = +val||0; calcularTotal(); }
+function removerServico(idx, si){
+  estado.checklistAtual.itensCarroceria[idx].servicos.splice(si,1);
+  renderChecklist();
+  document.getElementById('ck-item-'+idx).classList.add('open');
+}
+function calcularTotal(){
+  const ck = estado.checklistAtual;
+  if(!ck) return;
+  let subtotal = 0;
+  ck.itensCarroceria.forEach(it=>{
+    it.servicos.forEach(s=>{ subtotal += (s.qtd||0)*(s.valor||0); });
+  });
+  const descVal = +document.getElementById('resDesconto').value || 0;
+  const descTipo = document.getElementById('resTipoDesc').value;
+  const desc = descTipo==='%' ? subtotal*descVal/100 : descVal;
+  const total = Math.max(0, subtotal - desc);
+  document.getElementById('resSubtotal').textContent = formatarMoeda(subtotal);
+  document.getElementById('resTotal').textContent = formatarMoeda(total);
+  ck.subtotal = subtotal;
+  ck.desconto = desc;
+  ck.total = total;
+}
+
+// Eventos dos campos do checklist
+document.addEventListener('input', e=>{
+  if(e.target.id==='ckCombustivel') estado.checklistAtual && (estado.checklistAtual.combustivel = e.target.value);
+  if(e.target.id==='ckKm') estado.checklistAtual && (estado.checklistAtual.km = e.target.value);
+  if(e.target.id==='ckItens') estado.checklistAtual && (estado.checklistAtual.itens = e.target.value);
+});
+document.addEventListener('change', e=>{
+  if(e.target.id==='ckCombustivel') estado.checklistAtual && (estado.checklistAtual.combustivel = e.target.value);
+});
+
+function salvarRascunho(){
+  salvarOrcamento('rascunho');
+  toast('Rascunho salvo!');
+  irPara('orcamentos');
+}
+function gerarOrcamento(){
+  const total = estado.checklistAtual.total;
+  if(!total || total<=0){
+    if(!confirm('Nenhum serviço adicionado. Deseja continuar mesmo assim?')) return;
+  }
+  salvarOrcamento('rascunho');
+  mostrarPreviewPdf();
+}
+function salvarOrcamento(status){
+  const ck = estado.checklistAtual;
+  calcularTotal();
+  let orc = DB.orcamentos.find(o=>o.checklistId===ck.id);
+  if(orc){
+    Object.assign(orc, {
+      clienteId: ck.clienteId, veiculoId: ck.veiculoId,
+      data: ck.data, checklist: JSON.parse(JSON.stringify(ck)),
+      subtotal: ck.subtotal, desconto: ck.desconto, total: ck.total,
+      status
+    });
+  } else {
+    orc = {
+      id: Date.now(),
+      numero: 1000 + DB.orcamentos.length + 1,
+      clienteId: ck.clienteId, veiculoId: ck.veiculoId,
+      data: ck.data, checklist: JSON.parse(JSON.stringify(ck)),
+      subtotal: ck.subtotal, desconto: ck.desconto, total: ck.total,
+      status
+    };
+    DB.orcamentos.push(orc);
+  }
+  salvarDB();
+  estado.orcamentoAtual = orc.id;
+}
+
+// ============ ORÇAMENTOS ============
+function renderOrcamentos(){
+  const lista = document.getElementById('listaOrcamentos');
+  let orcs = [...DB.orcamentos].sort((a,b)=>new Date(b.data)-new Date(a.data));
+  if(estado.filtroOrc!=='todos') orcs = orcs.filter(o=>o.status===estado.filtroOrc);
+  if(orcs.length===0){
+    lista.innerHTML = '<div class="list-empty"><div class="icon">📄</div><p>Nenhum orçamento</p></div>';
+    return;
+  }
+  lista.innerHTML = orcs.map(o=>{
+    const c = DB.clientes.find(x=>x.id===o.clienteId);
+    const v = DB.veiculos.find(x=>x.id===o.veiculoId);
+    return `<div class="card card-clickable" onclick="abrirOrcamento(${o.id})">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div>
+          <div class="card-title">#${o.numero} - ${c?c.nome:'?'}</div>
+          <div class="card-sub">${v?v.marca+' '+v.modelo+' • '+v.placa:'-'}</div>
+          <div class="card-sub">${formatarData(o.data)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700; color:var(--azul);">${formatarMoeda(o.total)}</div>
+          <span class="badge badge-${o.status}" style="margin-top:4px;">${o.status}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filtrarOrc(btn){
+  document.querySelectorAll('.filtro-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  estado.filtroOrc = btn.dataset.filtro;
+  renderOrcamentos();
+}
+function abrirOrcamento(id){
+  estado.orcamentoAtual = id;
+  irPara('orcamento-detalhe');
+}
+function renderOrcamentoDetalhe(){
+  const o = DB.orcamentos.find(x=>x.id===estado.orcamentoAtual);
+  if(!o){ irPara('orcamentos'); return; }
+  const c = DB.clientes.find(x=>x.id===o.clienteId);
+  const v = DB.veiculos.find(x=>x.id===o.veiculoId);
+  const cont = document.getElementById('orcDetalhe');
+  cont.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="card-title" style="font-size:20px;">Orçamento #${o.numero}</div>
+          <div class="card-sub">${formatarData(o.data)}</div>
+        </div>
+        <span class="badge badge-${o.status}" style="font-size:12px;">${o.status}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cliente</div>
+      <div class="card-sub"><b>${c?c.nome:'-'}</b></div>
+      <div class="card-sub">${c?c.tel:''} ${c?c.email:''}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Veículo</div>
+      <div class="card-sub"><b>${v?v.marca+' '+v.modelo:'-'}</b> • Placa ${v?v.placa:'-'}</div>
+      <div class="card-sub">${v?v.ano+' • '+v.cor:''} • ${v&&v.km?Number(v.km).toLocaleString('pt-BR')+' km':''}</div>
+    </div>
+    <div class="resumo">
+      <div class="resumo-row"><span>Subtotal:</span><span>${formatarMoeda(o.subtotal)}</span></div>
+      <div class="resumo-row"><span>Desconto:</span><span>- ${formatarMoeda(o.desconto)}</span></div>
+      <div class="resumo-row total"><span>TOTAL:</span><span>${formatarMoeda(o.total)}</span></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+      <button class="btn btn-outline" onclick="editarOrcamento(${o.id})">✏️ Editar</button>
+      <button class="btn btn-primary" onclick="mostrarPreviewPdf(${o.id})">📄 Ver PDF</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:8px;">
+      <button class="btn btn-sm btn-secondary" onclick="mudarStatus(${o.id},'enviado')">📤 Enviar</button>
+      <button class="btn btn-sm btn-success" onclick="mudarStatus(${o.id},'aprovado')">✅ Aprovar</button>
+      <button class="btn btn-sm btn-danger" onclick="mudarStatus(${o.id},'recusado')">❌ Recusar</button>
+      <button class="btn btn-sm btn-outline" onclick="excluirOrcamento(${o.id})">🗑️ Excluir</button>
+    </div>
+  `;
+}
+function editarOrcamento(id){
+  const o = DB.orcamentos.find(x=>x.id===id);
+  if(!o) return;
+  estado.checklistAtual = JSON.parse(JSON.stringify(o.checklist));
+  renderChecklist();
+  irPara('checklist');
+}
+function mudarStatus(id, status){
+  const o = DB.orcamentos.find(x=>x.id===id);
+  if(o){ o.status = status; salvarDB(); renderOrcamentoDetalhe(); toast('Status atualizado'); }
+}
+function excluirOrcamento(id){
+  if(!confirm('Excluir este orçamento?')) return;
+  DB.orcamentos = DB.orcamentos.filter(o=>o.id!==id);
+  salvarDB();
+  irPara('orcamentos');
+  toast('Orçamento excluído');
+}
+
+// ============ PDF ============
+function mostrarPreviewPdf(id){
+  const orcId = id || estado.orcamentoAtual;
+  const o = DB.orcamentos.find(x=>x.id===orcId);
+  if(!o) return;
+  estado.orcamentoAtual = orcId;
+  const c = DB.clientes.find(x=>x.id===o.clienteId);
+  const v = DB.veiculos.find(x=>x.id===o.veiculoId);
+  const validade = new Date();
+  validade.setDate(validade.getDate() + (DB.config.validade||15));
+
+  // Montar linhas de serviços
+  let linhasServicos = '';
+  o.checklist.itensCarroceria.forEach(it=>{
+    it.servicos.forEach(s=>{
+      if(s.nome){
+        linhasServicos += `<tr>
+          <td>${it.nome}</td>
+          <td>${s.nome}</td>
+          <td style="text-align:center;">${s.qtd||1}</td>
+          <td style="text-align:right;">${formatarMoeda(s.valor||0)}</td>
+          <td style="text-align:right;"><b>${formatarMoeda((s.qtd||1)*(s.valor||0))}</b></td>
+        </tr>`;
+      }
+    });
+  });
+
+  // Fotos das avarias
+  let fotosHtml = '';
+  o.checklist.itensCarroceria.forEach(it=>{
+    if(it.fotos.length>0){
+      fotosHtml += `<div style="margin-bottom:10px;"><b>${it.nome}</b> <span style="color:#4a5568;">(${it.status})</span>`;
+      fotosHtml += `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">`;
+      it.fotos.forEach(f=>{ fotosHtml += `<img src="${f}" style="width:80px; height:80px; object-fit:cover; border-radius:4px; border:1px solid #ccc;">`; });
+      fotosHtml += `</div></div>`;
+    }
+  });
+
+  const preview = `
+    <div class="pdf-preview">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        ${DB.config.logo?`<img src="${DB.config.logo}" style="width:60px; height:60px; object-fit:contain;">`:''}
+        <div>
+          <h2 style="margin:0; border:none; padding:0;">${DB.config.nome}</h2>
+          <div style="font-size:12px; color:#4a5568;">CNPJ: ${DB.config.cnpj} • Tel: ${DB.config.tel}</div>
+          <div style="font-size:12px; color:#4a5568;">${DB.config.end}</div>
+        </div>
+      </div>
+      <h3 style="color:var(--azul); border-bottom:2px solid var(--azul); padding-bottom:6px;">Orçamento #${o.numero}</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; font-size:13px;">
+        <div><b>Data:</b> ${formatarData(o.data)}</div>
+        <div><b>Validade:</b> ${formatarData(validade.toISOString())}</div>
+        <div><b>Cliente:</b> ${c?c.nome:'-'}</div>
+        <div><b>Doc:</b> ${c?c.doc||'-':'-'}</div>
+        <div><b>Telefone:</b> ${c?c.tel||'-':'-'}</div>
+        <div><b>Veículo:</b> ${v?v.marca+' '+v.modelo:'-'}</div>
+        <div><b>Placa:</b> ${v?v.placa:'-'}</div>
+        <div><b>Ano/Cor:</b> ${v?(v.ano||'-')+' / '+(v.cor||'-'):'-'}</div>
+        <div><b>KM:</b> ${o.checklist.km||v&&v.km||'-'}</div>
+        <div><b>Combustível:</b> ${o.checklist.combustivel||'-'}</div>
+      </div>
+      ${o.checklist.itens?`<div style="margin:10px 0; font-size:13px;"><b>Itens deixados no veículo:</b> ${o.checklist.itens}</div>`:''}
+      <h4 style="color:var(--azul); margin-top:14px;">Serviços</h4>
+      <table>
+        <thead><tr><th>Peça</th><th>Serviço</th><th>Qtd</th><th>V.Unit.</th><th>Total</th></tr></thead>
+        <tbody>${linhasServicos || '<tr><td colspan="5" style="text-align:center;">Nenhum serviço</td></tr>'}</tbody>
+      </table>
+      ${fotosHtml?`<h4 style="color:var(--azul); margin-top:14px;">Registro Fotográfico</h4>${fotosHtml}`:''}
+      <div style="background:#f5f7fa; padding:10px; border-radius:6px; margin-top:12px; font-size:14px;">
+        <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>${formatarMoeda(o.subtotal)}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Desconto:</span><span>- ${formatarMoeda(o.desconto)}</span></div>
+        <div style="display:flex; justify-content:space-between; font-weight:700; font-size:18px; color:var(--azul); border-top:2px solid var(--azul); padding-top:6px; margin-top:6px;"><span>TOTAL:</span><span>${formatarMoeda(o.total)}</span></div>
+      </div>
+      <div style="margin-top:14px; font-size:13px;">
+        <b>Formas de pagamento:</b> ${DB.config.pagto}
+      </div>
+      <div class="assinatura-box">
+        ___________________________________<br>
+        <small>Assinatura do Cliente</small>
+      </div>
+    </div>
+  `;
+  document.getElementById('pdfPreviewContent').innerHTML = preview;
+  document.getElementById('modalPdf').classList.add('active');
+}
+
+function baixarPdf(){
+  const o = DB.orcamentos.find(x=>x.id===estado.orcamentoAtual);
+  if(!o) return;
+  const c = DB.clientes.find(x=>x.id===o.clienteId);
+  const v = DB.veiculos.find(x=>x.id===o.veiculoId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Cabeçalho
+  doc.setFillColor(30,58,95);
+  doc.rect(0,0,pageW,30,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica','bold');
+  doc.text(DB.config.nome, 14, 14);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text(`CNPJ: ${DB.config.cnpj} • Tel: ${DB.config.tel}`, 14, 21);
+  doc.text(DB.config.end, 14, 26);
+
+  // Título
+  doc.setTextColor(30,58,95);
+  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');
+  doc.text(`ORÇAMENTO #${o.numero}`, 14, 42);
+  doc.setDrawColor(30,58,95);
+  doc.line(14, 45, pageW-14, 45);
+
+  // Dados
+  doc.setFontSize(10);
+  doc.setTextColor(0,0,0);
+  doc.setFont('helvetica','normal');
+  const validade = new Date();
+  validade.setDate(validade.getDate() + (DB.config.validade||15));
+  let y = 54;
+  const dados = [
+    [`Data: ${formatarData(o.data)}`, `Validade: ${formatarData(validade.toISOString())}`],
+    [`Cliente: ${c?c.nome:'-'}`, `Doc: ${c?c.doc||'-':'-'}`],
+    [`Telefone: ${c?c.tel||'-':'-'}`, `Veículo: ${v?v.marca+' '+v.modelo:'-'}`],
+    [`Placa: ${v?v.placa:'-'}`, `Ano/Cor: ${v?(v.ano||'-')+' / '+(v.cor||'-'):'-'}`],
+    [`KM: ${o.checklist.km||v&&v.km||'-'}`, `Combustível: ${o.checklist.combustivel||'-'}`]
+  ];
+  dados.forEach(linha=>{
+    doc.text(linha[0], 14, y);
+    doc.text(linha[1], pageW/2+5, y);
+    y += 6;
+  });
+
+  if(o.checklist.itens){
+    y += 2;
+    doc.setFont('helvetica','bold');
+    doc.text('Itens deixados no veículo:', 14, y);
+    doc.setFont('helvetica','normal');
+    y += 5;
+    const split = doc.splitTextToSize(o.checklist.itens, pageW-28);
+    doc.text(split, 14, y);
+    y += split.length*5 + 4;
+  }
+
+  // Tabela serviços
+  y += 4;
+  const rows = [];
+  o.checklist.itensCarroceria.forEach(it=>{
+    it.servicos.forEach(s=>{
+      if(s.nome) rows.push([it.nome, s.nome, s.qtd||1, formatarMoeda(s.valor||0), formatarMoeda((s.qtd||1)*(s.valor||0))]);
+    });
+  });
+  doc.autoTable({
+    startY: y,
+    head: [['Peça','Serviço','Qtd','V.Unit.','Total']],
+    body: rows.length?rows:[['-','-','-','-','Sem serviços']],
+    theme: 'grid',
+    headStyles: { fillColor:[30,58,95], textColor:255, fontStyle:'bold' },
+    styles: { fontSize:9, cellPadding:3 },
+    columnStyles: { 2:{halign:'center'}, 3:{halign:'right'}, 4:{halign:'right'} }
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Totais
+  doc.setFont('helvetica','normal');
+  doc.text(`Subtotal: ${formatarMoeda(o.subtotal)}`, pageW-80, y); y+=5;
+  doc.text(`Desconto: - ${formatarMoeda(o.desconto)}`, pageW-80, y); y+=6;
+  doc.setDrawColor(30,58,95);
+  doc.setLineWidth(0.5);
+  doc.line(pageW-80, y-2, pageW-14, y-2);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(30,58,95);
+  doc.text(`TOTAL: ${formatarMoeda(o.total)}`, pageW-80, y+3);
+
+  // Formas de pagamento
+  y += 14;
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(10);
+  doc.setFont('helvetica','bold');
+  doc.text('Formas de pagamento:', 14, y);
+  doc.setFont('helvetica','normal');
+  y += 5;
+  const splitP = doc.splitTextToSize(DB.config.pagto, pageW-28);
+  doc.text(splitP, 14, y);
+  y += splitP.length*5 + 10;
+
+  // Assinatura
+  if(y < 250){
+    doc.setDrawColor(100);
+    doc.line(30, y, pageW-30, y);
+    doc.setFontSize(9);
+    doc.text('Assinatura do Cliente', pageW/2, y+5, {align:'center'});
+  }
+
+  doc.save(`orcamento-${o.numero}-${c?c.nome.replace(/\s/g,'_'):'cliente'}.pdf`);
+  toast('PDF baixado!');
+}
+
+function compartilharPdf(){
+  toast('Use o botão Baixar PDF e compartilhe pelo seu app favorito');
+  // Em navegadores móveis com Web Share API, poderíamos usar:
+  // navigator.share({ title, files: [...] })
+  baixarPdf();
+}
+
+// ============ SERVIÇOS ============
+function renderServicos(){
+  const lista = document.getElementById('listaServicos');
+  if(DB.servicos.length===0){
+    lista.innerHTML = '<div class="list-empty"><div class="icon">🛠️</div><p>Nenhum serviço cadastrado</p></div>';
+    return;
+  }
+  lista.innerHTML = DB.servicos.map(s=>`
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="card-title">${s.nome}</div>
+          <div class="card-sub" style="color:var(--azul); font-weight:600;">${formatarMoeda(s.preco)}</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm btn-outline" onclick="editarServico(${s.id})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="excluirServico(${s.id})">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function abrirModalServico(){
+  estado.servicoEditando = null;
+  document.getElementById('modalServicoTitulo').textContent = 'Novo Serviço';
+  document.getElementById('sNome').value = '';
+  document.getElementById('sPreco').value = '';
+  document.getElementById('modalServico').classList.add('active');
+}
+function editarServico(id){
+  const s = DB.servicos.find(x=>x.id===id);
+  if(!s) return;
+  estado.servicoEditando = id;
+  document.getElementById('modalServicoTitulo').textContent = 'Editar Serviço';
+  document.getElementById('sNome').value = s.nome;
+  document.getElementById('sPreco').value = s.preco;
+  document.getElementById('modalServico').classList.add('active');
+}
+function salvarServico(){
+  const nome = document.getElementById('sNome').value.trim();
+  const preco = +document.getElementById('sPreco').value || 0;
+  if(!nome){ toast('Informe o nome'); return; }
+  if(estado.servicoEditando){
+    const s = DB.servicos.find(x=>x.id===estado.servicoEditando);
+    s.nome = nome; s.preco = preco;
+  } else {
+    DB.servicos.push({id:Date.now(), nome, preco});
+  }
+  salvarDB();
+  fecharModal('modalServico');
+  renderServicos();
+  toast('Serviço salvo!');
+}
+function excluirServico(id){
+  if(!confirm('Excluir este serviço?')) return;
+  DB.servicos = DB.servicos.filter(s=>s.id!==id);
+  salvarDB();
+  renderServicos();
+  toast('Serviço excluído');
+}
+
+// ============ CONFIG ============
+function carregarConfig(){
+  document.getElementById('cfgNome').value = DB.config.nome||'';
+  document.getElementById('cfgCnpj').value = DB.config.cnpj||'';
+  document.getElementById('cfgTel').value = DB.config.tel||'';
+  document.getElementById('cfgEnd').value = DB.config.end||'';
+  document.getElementById('cfgValidade').value = DB.config.validade||15;
+  document.getElementById('cfgPagto').value = DB.config.pagto||'';
+  const prev = document.getElementById('cfgLogoPreview');
+  prev.innerHTML = DB.config.logo?`<img src="${DB.config.logo}" style="max-width:120px; border-radius:8px;">`:'<small style="color:var(--cinza-text);">Sem logo</small>';
+}
+function uploadLogo(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    comprimirImagem(e.target.result, 400, 0.8, data=>{
+      DB.config.logo = data;
+      salvarDB();
+      carregarConfig();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+function salvarConfig(){
+  DB.config.nome = document.getElementById('cfgNome').value.trim();
+  DB.config.cnpj = document.getElementById('cfgCnpj').value.trim();
+  DB.config.tel = document.getElementById('cfgTel').value.trim();
+  DB.config.end = document.getElementById('cfgEnd').value.trim();
+  DB.config.validade = +document.getElementById('cfgValidade').value || 15;
+  DB.config.pagto = document.getElementById('cfgPagto').value.trim();
+  salvarDB();
+  toast('Configurações salvas!');
+}
+
+// ============ UTIL ============
+function fecharModal(id){ document.getElementById(id).classList.remove('active'); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function formatarMoeda(v){
+  return 'R$ '+(+v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+function formatarData(iso){
+  if(!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR');
+}
+
+// Fechar modais clicando fora
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('active'); });
+});
+
+// ============ INIT ============
+carregarDB();
+verificarLogin();
+</script>
+</body>
+</html>
